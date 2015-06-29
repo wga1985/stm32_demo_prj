@@ -41,15 +41,14 @@ typedef struct _tag_usart_err
 /* 定义usart1接收回调函数指针*/
 typedef void (*Usart1RxCbFunc)(unsigned char *buf, unsigned int len);
 
-int usart1_rx_callback_regiser(Usart1RxCbFunc callbackfunc);
-int usart1_rx_callback_unregiser(Usart1RxCbFunc callbackfunc);
+int usart1_rx_callback_register(Usart1RxCbFunc callbackfunc);
+int usart1_rx_callback_unregister(Usart1RxCbFunc callbackfunc);
 
 /*-------------------------------------------------------------------------------------------------------*/
 
 void usart1_init(int Baudrate);
 void usart1_open(void);
 void usart1_close(void);
-unsigned int usart1_write(unsigned char *src, unsigned int len);
-unsigned int usart1_read(unsigned char *dest, unsigned int len);
+unsigned int usart1_write(unsigned char *buf, unsigned int len);
 
 #endif /* _USART1_H */

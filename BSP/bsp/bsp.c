@@ -152,5 +152,6 @@ void BSP_Init(void)
 	Print_STM32_ClocksFreq();
 	
 	led_init();
+	timer2_init(72,1000); // 1ms
 }
 
