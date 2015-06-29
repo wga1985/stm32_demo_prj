@@ -12,11 +12,13 @@ void Usart1_RxCallback_Func(unsigned char *buf, unsigned int len)
 int main(void)
 {
 	BSP_Init();
-	usart1_rx_callback_register(Usart1_RxCallback_Func);
+	//usart1_rx_callback_register(Usart1_RxCallback_Func);
 
+	usart1_dma_test();
+	
 	while(1)
 	{
-		if(IS_TIMEOUT_NMS(TimerEvId_ID0, 1000))
+		if(IS_TIMEOUT_NMS(TimerEvId_ID0, 500))
 		{
 			LED1_TOGGLE;
 			LED2_TOGGLE;
