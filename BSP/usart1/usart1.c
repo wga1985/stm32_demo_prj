@@ -244,3 +244,118 @@ int fgetc(FILE *f)
 	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
 	return (int)USART_ReceiveData(USART1);
 }
+
+/*-------------------------------------------------------------------------------------------------------*/
+
+void usart1_dma_write(unsigned char *buf,unsigned int len, DMA1Ch4TransferCb callback)
+{
+	dma1_ch4_wait_busy();
+	dma1_ch4_lock();
+	
+	dma1_ch4_tranfer_done_cb_register(callback);
+	dma1_ch4_transfer_mode(DMA_Mode_Normal);
+	dma1_ch4_mem2peri_start(buf, (unsigned char *)(&USART1->DR), len);
+	
+	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
+}
+
+void usart1_dma_circular_write(unsigned char *buf,unsigned int len, DMA1Ch4TransferCb callback)
+{
+	dma1_ch4_wait_busy();
+	dma1_ch4_lock();
+	
+	dma1_ch4_tranfer_done_cb_register(callback);
+	dma1_ch4_transfer_mode(DMA_Mode_Circular);
+	dma1_ch4_mem2peri_start(buf, (unsigned char *)(&USART1->DR), len);
+	
+	USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
+}
+
+void usart1_dma_read(unsigned char *buf,unsigned int len, DMA1Ch5TransferCb callback)
+{
+	dma1_ch5_wait_busy();
+	dma1_ch5_lock();
+
+	dma1_ch5_tranfer_done_cb_register(callback);
+	dma1_ch5_transfer_mode(DMA_Mode_Normal);
+	dma1_ch5_peri2mem_start((unsigned char *)(&USART1->DR), buf, len);
+
+	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+	
+	dma1_ch5_wait_busy();
+}
+
+void usart1_dma_circular_read(unsigned char *buf,unsigned int len, DMA1Ch5TransferCb callback)
+{
+	dma1_ch5_wait_busy();
+	dma1_ch5_lock();
+
+	dma1_ch5_tranfer_done_cb_register(callback);
+	dma1_ch5_transfer_mode(DMA_Mode_Circular);
+	dma1_ch5_peri2mem_start((unsigned char *)(&USART1->DR), buf, len);
+
+	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+}
+
+#if 0
+/*------------------------------------------usart1 dma test-------------------------------------------------------------*/
+
+void usart1_dma_tx_done_callback(void)
+{
+	if(!dma1_ch4_mode_is_circular())
+	{
+		USART_DMACmd(USART1, USART_DMAReq_Tx, DISABLE);
+		dma1_ch4_stop();
+	}	
+	
+	//printf("\r\nusart1_dma_tx_done_callback\r\n");
+}
+
+void usart1_dma_rx_done_callback(void)
+{
+	if(!dma1_ch5_mode_is_circular())
+	{
+		USART_DMACmd(USART1, USART_DMAReq_Rx, DISABLE);
+		dma1_ch5_stop();
+	}
+	
+	printf("\r\nusart1_dma_rx_done_callback\r\n");
+}
+
+/*-------------------------------------------------------------------------------------------------------*/
+
+unsigned char change[512];
+unsigned char rbuf[512];
+
+void usart1_dma_test(void)
+{
+	int i;
+	for(i = 0; i < 512; i++) change[i] = 'c';
+	
+	dma1_ch4_init();
+	dma1_ch5_init();
+
+#if 0
+	usart1_dma_circular_write(change, 512, usart1_dma_tx_done_callback);
+	while(1);
+
+	usart1_dma_circular_read(rbuf, 10, usart1_dma_rx_done_callback);
+	while(1);
+#endif
+
+	usart1_dma_write(change, 512, usart1_dma_tx_done_callback);
+	usart1_dma_write(change, 512, usart1_dma_tx_done_callback);
+
+	dma1_ch4_memcpy(change, rbuf, 512, NULL);
+	printf("dma1_ch4_memcpy: %s\r\n", rbuf);
+
+	usart1_dma_read(rbuf, 10, usart1_dma_rx_done_callback);
+	printf("usart1_dma_read: %s\r\n", rbuf);	
+
+	usart1_dma_read(rbuf, 10, usart1_dma_rx_done_callback);
+	printf("usart1_dma_read: %s\r\n", rbuf);
+}
+
+/*-------------------------------------------------------------------------------------------------------*/
+#endif
+
