@@ -1,0 +1,115 @@
+#https://github.com/github/gitignore
+
+# Windows:
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+#Keil uVision
+*.opt
+*.ddk
+*.edk
+*.lst
+*.lnp
+*.mpf
+*.mpj
+*.omf
+*.rpt
+*.__i
+*.crf
+*.d
+*.axf
+*.tra
+*.dep
+*.uvgui.*
+*.iex
+*.htm
+*.sct
+*.map
+*.bin
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+
+#######开放模式############
+
+###############
+#    folder   #
+###############
+si-prj
+
+###############
+#  fixed file #
+###############
+#.gitignore
+*.txt
+*.exe
+*.def
+*.dsp
+*.lib
+*.doc
+*.dll
+*.lnt
+*.pm
+*.xls
+*.dbg
+*.DBG
+*.o
+*.plg
+*.keep
+
+###############
+#  temp file  #
+###############
+~*
+*.log
+*.cmm
+*.men
+*.ini
+*.fig
+*.cmp
+*.tmp
+*.bak
+
+###############
+#    script   #
+###############
+#*.bat
+
+#########保守模式############
+#不删除JLINK的设置
+!JLinkSettings.ini
+
+
+
+
