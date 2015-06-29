@@ -2,19 +2,15 @@
 
 /*-------------------------------------------------------------------------------------------------------*/
 
-void Usart1_RxCallback_Func(unsigned char *buf, unsigned int len)
-{
-	printf("[Usart1_RxCallback_Func] len: %d, buf: %s\r\n", len, buf);
-}
 
 /*-------------------------------------------------------------------------------------------------------*/
 
 int main(void)
 {
 	BSP_Init();
-	//usart1_rx_callback_register(Usart1_RxCallback_Func);
 
-	usart1_dma_test();
+	//usart1_dma_test();
+	pingpong_buf_test();
 	
 	while(1)
 	{

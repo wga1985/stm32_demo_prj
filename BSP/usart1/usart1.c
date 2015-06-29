@@ -297,7 +297,7 @@ void usart1_dma_circular_read(unsigned char *buf,unsigned int len, DMA1Ch5Transf
 	USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
 }
 
-#if 1
+#if 0
 /*------------------------------------------usart1 dma test-------------------------------------------------------------*/
 
 void usart1_dma_tx_done_callback(void)
