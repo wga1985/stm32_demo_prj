@@ -72,7 +72,7 @@ si-prj
 #  fixed file #
 ###############
 #.gitignore
-*.txt
+#*.txt
 *.exe
 *.def
 *.dsp

@@ -1,0 +1,140 @@
+/*
+	SysTick->CTRL,	--控制和状态寄存器
+		第0位：ENABLE，SysTick使能位（0：关闭SysTick功能，1：开启SysTick功能）；
+		第1位：TICKINT，SysTick中断使能位（0：关闭SysTick中断，1：开启SysTick中断）；
+		第2位：CLKSOURCE，SysTick时钟选择（0：使用HCLK/8作为时钟源，1：使用HCLK）；
+		第16位：COUNTFLAG，SysTick计数比较标志，如果在上次读取本寄存器后，SysTick已经数到0了，则该位为1，如果读取该位，该位自动清零。
+	SysTick->LOAD,	--重装载寄存器
+	SysTick->VAL,	--当前值寄存器
+	SysTick->CALIB,	--校准值寄存器
+	
+	思路: 利用systick定时器为递减计数器(24位的倒数计数定时器), 设定初值并使能它后, 它会每个系统时钟周期计数器减, 
+		计数到0时, SysTick计数器自动重装初值并继续计数, 同时触发中断.
+	(简单理解: 用72M的时钟频率, 即1s计数72M=72000000次, 那1ms计数72000次, 所以计数值为72000)
+	
+	首先，我们需要有一个72M的systick系统时钟，那么，使用下面这个时钟OK就 ！
+    SystemInit();	这个函数可以让主频运行到72M。可以把它作为systick的时钟源。
+    接着开始配置systick，实际上配置systick的严格过程如下：
+    1、调用SysTick_CounterCmd()       --失能SysTick计数器
+    2、调用SysTick_ITConfig()          --失能SysTick中断
+    3、调用SysTick_CLKSourceConfig()  --设置SysTick时钟源
+    4、调用SysTick_SetReload()         --设置SysTick重装载值
+    5、调用SysTick_ITConfig()          --使能SysTick中断
+    6、调用SysTick_CounterCmd()       --开启SysTick计数器
+    这里大家一定要注意，必须使得当前寄存器的值VAL等于0！
+    SysTick->VAL  = (0x00);	只有当VAL值为0时，计数器自动重载RELOAD.
+	接下来就可以直接调用Delay();函数进行延迟了。
+	延迟函数的实现中，要注意的是，全局变量TimingDelay必须使用volatile，否则可能会被编译器优化.
+*/
+
+	SystemInit(); /* 配置系统时钟为72M, 把它作为systick的时钟源 */
+	
+/* misc.c */
+void SysTick_CLKSourceConfig(uint32_t SysTick_CLKSource)
+{
+	/* Check the parameters */
+	assert_param(IS_SYSTICK_CLK_SOURCE(SysTick_CLKSource));
+	if (SysTick_CLKSource == SysTick_CLKSource_HCLK)	/* HCKL最大72MHz */
+	{
+		SysTick->CTRL |= SysTick_CLKSource_HCLK; /*使用HCLK, CLKSOURCE位为1*/
+	}
+	else
+	{
+		SysTick->CTRL &= SysTick_CLKSource_HCLK_Div8; /*使用HCLK/8作为时钟源, CLKSOURCE位为0*/
+	}
+}
+
+/*core_m3.h*/
+/* 
+	* @param   ticks   number of ticks between two interrupts
+	* @return  1 = failed, 0 = successful/
+ */
+static __INLINE uint32_t SysTick_Config(uint32_t ticks)
+{ 
+	if (ticks > SysTick_LOAD_RELOAD_Msk)  return (1);            /* Reload value impossible */
+															   
+	SysTick->LOAD  = (ticks & SysTick_LOAD_RELOAD_Msk) - 1;      /* set reload register */
+	NVIC_SetPriority (SysTick_IRQn, (1<<__NVIC_PRIO_BITS) - 1);  /* set Priority for Cortex-M0 System Interrupts */
+	SysTick->VAL   = 0;                                          /* Load the SysTick Counter Value */
+	SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk | 	//默认CLKSOURCE位为1,使用HCKL
+				   SysTick_CTRL_TICKINT_Msk   | 
+				   SysTick_CTRL_ENABLE_Msk;                    /* Enable SysTick IRQ and SysTick Timer */
+	return (0);                                                /* Function successful */
+}
+
+SysTick_Config(72000);	/*使用HCKL = 72MHz, 即1ms-72000*/
+
+SysTick_Config(72000);	/*此时使用的是HCKL = 72MHz*/
+SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8); /*此时使用的是HCKL/8 = 9MHz*/
+
+#if 1
+volatile u32 TimingDelay;
+void SysTick_Handler(void)
+{
+	if(TimingDelay != 0)
+	{
+		TimingDelay--;
+	}
+}
+
+void delay_ms(u32 nms)
+{
+	TimingDelay = nms;
+	SysTick->VAL=0x00; //清空计数器 
+	SysTick->CTRL=0x01 ; //Enable Systick,开始倒数
+	while(TimingDelay != 0);
+	SysTick->CTRL=0x00; //Disable Systick
+	SysTick->VAL =0X00; //清空计数器  
+}
+
+{
+	SysTick_Config(72000);	/*使用HCKL = 72MHz, 即1ms-72000*/
+	delay_ms(10);
+}
+#endif
+
+#if 0
+void delay_us(u32 nus) 
+{               
+	u32 temp;                           
+	SysTick->LOAD=nus*fac_us; //时间加载                      
+	SysTick->VAL=0x00; //清空计数器 
+	SysTick->CTRL=0x01 ; //Enable Systick,开始倒数      
+	do 
+	{ 
+		temp=SysTick->CTRL;
+	} 
+	while(temp&0x01&&!(temp&(1<<16)));//等待时间到达, 判断第16位COUNTFLAG为1
+	
+	SysTick->CTRL=0x00; //Disable Systick
+	SysTick->VAL =0X00; //清空计数器         
+}
+
+void delay_ms(u16 nms)
+{
+	u32 temp;
+	
+	SysTick->LOAD = (u32)nms * fac_ms;	//时间加载(SysTick->LOAD为24bit)	  		 
+	SysTick->VAL = 0x00;			//清空计数器
+	SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk ;	//开始倒数	 
+
+	do{
+		temp = SysTick->CTRL;
+	}while(temp&0x01 && !(temp&(1<<16)));	//等待时间到达
+
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;	//关闭计数器
+	SysTick->VAL = 0X00;	//清空计数器
+}
+
+void delay_init()
+{
+	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);	//选择外部时钟  HCLK/8
+	fac_us = SystemCoreClock/8000000;	//为系统时钟的1/8  
+									//每个us需要的systick时钟数
+	fac_ms = (u16)fac_us * 1000;	//代表每个ms需要的systick时钟数   
+}
+#endif
+
+
+
+
